@@ -80,8 +80,8 @@ void LICProcessor::process() {
 
     for (auto j = 0; j < texDims_.y; j++) {
         for (auto i = 0; i < texDims_.x; i++) {
-            int val = int(licTexture[i][j]);
-            lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
+            //int val = int(licTexture[i][j]);
+            //lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
         }
     }
 

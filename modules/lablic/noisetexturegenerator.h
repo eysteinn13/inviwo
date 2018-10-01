@@ -54,6 +54,9 @@ public:
 // Properties
 public:
     IntVec2Property texSize_;
+	TemplateOptionProperty<int> noise_mode;
+	BoolProperty seed_random;
+	IntProperty random_seed;
 
 // TODO: Declare additional properties
 // IntProperty properyName;

@@ -25,9 +25,12 @@ const ProcessorInfo NoiseTextureGenerator::processorInfo_{
 const ProcessorInfo NoiseTextureGenerator::getProcessorInfo() const { return processorInfo_; }
 
 NoiseTextureGenerator::NoiseTextureGenerator()
-    : Processor()
-    , texOut_("texOut")
-    , texSize_("texSize", "Texture Size", vec2(512, 512), vec2(1, 1), vec2(2048, 2048), vec2(1, 1))
+	: Processor()
+	, texOut_("texOut")
+	, texSize_("texSize", "Texture Size", vec2(512, 512), vec2(1, 1), vec2(2048, 2048), vec2(1, 1))
+	, noise_mode("noise_mode", "Noise Mode")
+	, seed_random("seed_random", "Use random seed", false)
+	, random_seed("random_seed", "Random Seed", 500, 0, 1000, 1)
 
     // TODO: Register additional properties
 
@@ -36,11 +39,23 @@ NoiseTextureGenerator::NoiseTextureGenerator()
     addPort(texOut_);
 
     // Register properties
+	noise_mode.addOption("grayscale", "Grayscale", 0);
+	noise_mode.addOption("black-white", "Black-While", 1);
+	addProperty(noise_mode);
     addProperty(texSize_);
-
-
-    // TODO: Register additional properties
-
+	addProperty(seed_random);
+	addProperty(random_seed);
+	
+	//Only display relevant properties
+	util::hide(random_seed);
+	seed_random.onChange([this]() {
+		if (seed_random.get() == false) {
+			util::hide(random_seed);
+		}
+		else {
+			util::show(random_seed);
+		}
+	});
 }
 
 void NoiseTextureGenerator::process() {
@@ -59,15 +74,26 @@ void NoiseTextureGenerator::process() {
     // representation of the object we want to modify (here a layer)
     auto lr = outLayer->getEditableRepresentation<LayerRAM>();
 
+	//Seed random number generator
+	if (seed_random.get() == true)
+		srand(random_seed.get());
+	else
+		srand(time(NULL));
+
+	//Color the pixels
     for (int j = 0; j < texSize_.get().y; j++) {
         for (int i = 0; i < texSize_.get().x; i++) {
 
-            int val = 0;
+            // Randomly sample values for the texture			
+			float r_temp = ((float)rand()) / (float)RAND_MAX;
+			float random = r_temp * 255;
 
-            // TODO: Randomly sample values for the texture
+			float value = random;
+			if (noise_mode.get() == 1)
+				value = r_temp > 0.5 ? 0.0f : 255.0f;
 
-            // A value within the ouput image is set by specifying pixel position and color
-            lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
+			// A value within the ouput image is set by specifying pixel position and color
+			lr->setFromDVec4(size2_t(i, j), dvec4(value, value, value, 255));
         }
     }
 
