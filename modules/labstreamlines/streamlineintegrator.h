@@ -115,7 +115,7 @@ private:
 		IndexBufferRAM* indexBuffer,
 		std::vector<BasicMesh::Vertex>& vertices);
 
-	void StreamlineIntegrator::createStreamLine(const vec2 & startPoint, const VolumeRAM* vr,
+	void createStreamLine(const vec2 & startPoint, const VolumeRAM* vr,
 		IndexBufferRAM* indexBufferRK, IndexBufferRAM* indexBufferPoints,
 		std::vector<BasicMesh::Vertex>& vertices);
 };

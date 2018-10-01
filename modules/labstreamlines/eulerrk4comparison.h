@@ -15,6 +15,7 @@
 #include <inviwo/core/processors/processor.h>
 #include <inviwo/core/ports/meshport.h>
 #include <inviwo/core/ports/volumeport.h>
+#include <inviwo/core/datastructures/geometry/basicmesh.h>
 #include <inviwo/core/properties/ordinalproperty.h>
 #include <inviwo/core/properties/eventproperty.h>
 

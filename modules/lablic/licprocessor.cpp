@@ -76,10 +76,10 @@ void LICProcessor::process() {
 
     // TODO: Implement LIC and FastLIC
     // This code instead sets all pixels to the same gray value
-    std::vector<std::vector<double>> licTexture(texDims_.x, std::vector<double>(texDims_.y, 127.0));
-
+    // std::vector<std::vector<double>> licTexture(texDims_.x, std::vector<double>(texDims_.y, 127.0));
     for (auto j = 0; j < texDims_.y; j++) {
         for (auto i = 0; i < texDims_.x; i++) {
+//            Interpolator::sampleFromGrayscaleImage(tr, size2_t(i, j));
             //int val = int(licTexture[i][j]);
             //lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
         }

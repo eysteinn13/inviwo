@@ -14,6 +14,7 @@
 #include <inviwo/core/common/inviwo.h>
 #include <inviwo/core/datastructures/geometry/basicmesh.h>
 #include <functional>
+#include <inviwo/core/datastructures/volume/volume.h>
 
 namespace inviwo {
 
@@ -28,7 +29,8 @@ public:
 
 // Methods
 public:
-
+    vec2 Integrator::RK4(const Volume* vol, const vec2& position, float step_size,
+                         int direction, bool dir_field, bool&threshold, const float& threshold_value)
     // TODO: Build on the last assignment by copying the integrator code
     // here and in the respective .cpp. Mark a small change in the vector field sampling
     // (change the parameter VolumeRAM* to Volume*, i.e., vr to vol.get()).

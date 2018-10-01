@@ -10,6 +10,7 @@
 
 #include <lablic/noisetexturegenerator.h>
 #include <inviwo/core/datastructures/image/layerram.h>
+#include <inviwo/core/util/utilities.h>
 
 namespace inviwo {
 
