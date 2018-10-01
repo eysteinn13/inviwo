@@ -73,6 +73,8 @@ public:
 
 // Properties
 public:
+	BoolProperty fast;
+	FloatProperty kernelSize;
 
 // TODO: Declare properties
 // IntProperty prop1;

@@ -31,6 +31,8 @@ LICProcessor::LICProcessor()
     , volumeIn_("volIn")
     , noiseTexIn_("noiseTexIn")
     , licOut_("licOut")
+	, fast("fast", "Fast LIC", false)
+	, kernelSize("kernelSize", "Kernel Size", 15, 3, 100)
 
 // TODO: Register additional properties
 
@@ -41,6 +43,8 @@ LICProcessor::LICProcessor()
     addPort(licOut_);
 
     // Register properties
+	addProperty(fast);
+	addProperty(kernelSize);
 
     // TODO: Register additional properties
 
@@ -83,7 +87,7 @@ void LICProcessor::process() {
 	float pixelHeight = (float) dims.y / texDims_.y;
 	float stepSize = pixelLength < pixelHeight ? pixelLength : pixelHeight;
 
-	float arcLength = 15.f;	
+	float arcLength = kernelSize.get();
     for (auto j = 0; j < texDims_.y; j++) {
         for (auto i = 0; i < texDims_.x; i++) {
 			
