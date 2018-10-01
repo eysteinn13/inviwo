@@ -59,6 +59,7 @@ void LICProcessor::process() {
     auto vol = volumeIn_.getData();
     vectorFieldDims_ = vol->getDimensions();
     auto vr = vol->getRepresentation<VolumeRAM>();
+	auto dims = vr->getDimensions();
 
     // An accessible form of on image is retrieved analogous to a volume
     auto tex = noiseTexIn_.getData();
@@ -77,9 +78,25 @@ void LICProcessor::process() {
     // TODO: Implement LIC and FastLIC
     // This code instead sets all pixels to the same gray value
     // std::vector<std::vector<double>> licTexture(texDims_.x, std::vector<double>(texDims_.y, 127.0));
+
+	float pixelLength = (float) dims.x / texDims_.x;
+	float pixelHeight = (float) dims.y / texDims_.y;
+	float stepSize = pixelLength < pixelHeight ? pixelLength : pixelHeight;
+
+	float arcLength = 0.5f;	
     for (auto j = 0; j < texDims_.y; j++) {
         for (auto i = 0; i < texDims_.x; i++) {
-//            Interpolator::sampleFromGrayscaleImage(tr, size2_t(i, j));
+			
+			/*
+			auto vertices = Integrator::createStreamLine(vec2(i * stepSize, j * stepSize), vol.get(), arcLength, stepSize);
+			for(auto vertex : vertices)
+			{
+				float val = Interpolator::sampleFromGrayscaleImage(tr, vec2(vertex.x/stepSize, vertex.y/stepSize));
+				lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
+			}
+			*/
+
+           //Interpolator::sampleFromGrayscaleImage(tr, size2_t(i, j));
             //int val = int(licTexture[i][j]);
             //lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
         }

@@ -13,11 +13,9 @@
 
 namespace inviwo {
 
-void drawLineSegment(const vec2& v1, const vec2& v2, const vec4& color, IndexBufferRAM* indexBuffer, std::vector<BasicMesh::Vertex>& vertices);
-
 Integrator::Integrator() {}
     
-vec2 RK4(const Volume* vol, const vec2& position, float step_size)
+vec2 Integrator::RK4(const Volume* vol, const vec2& position, float step_size)
 {
     vec2 v1 = Interpolator::sampleFromField(vol, position);
     vec2 v2 = Interpolator::sampleFromField(vol, position + (step_size / 2) * v1);
@@ -31,7 +29,7 @@ vec2 RK4(const Volume* vol, const vec2& position, float step_size)
     return next_point;
 }
     
-std::vector<vec2> createStreamLine(const vec2 & startPoint, const Volume* vol, IndexBufferRAM* indexBufferRK, float arcLength, float stepSize)
+std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Volume* vol, float arcLength, float stepSize)
 {
     auto vr = vol->getRepresentation<VolumeRAM>();
     auto dims = vr->getDimensions();

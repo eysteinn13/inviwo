@@ -28,7 +28,7 @@ const ProcessorInfo NoiseTextureGenerator::getProcessorInfo() const { return pro
 NoiseTextureGenerator::NoiseTextureGenerator()
 	: Processor()
 	, texOut_("texOut")
-	, texSize_("texSize", "Texture Size", vec2(512, 512), vec2(1, 1), vec2(2048, 2048), vec2(1, 1))
+	, texSize_("texSize", "Texture Size", vec2(100, 100), vec2(1, 1), vec2(2048, 2048), vec2(1, 1))
 	, noise_mode("noise_mode", "Noise Mode")
 	, seed_random("seed_random", "Use random seed", false)
 	, random_seed("random_seed", "Random Seed", 500, 0, 1000, 1)

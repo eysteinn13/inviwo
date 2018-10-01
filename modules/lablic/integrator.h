@@ -29,9 +29,9 @@ public:
 
 // Methods
 public:
-    vec2 RK4(const Volume* vol, const vec2& position, float step_size);
+    static vec2 RK4(const Volume* vol, const vec2& position, float step_size);
     
-    std::vector<vec2> createStreamLine(const vec2 & startPoint, const Volume* vol, IndexBufferRAM* indexBufferRK, float arcLength, float stepSize);
+    static std::vector<vec2> createStreamLine(const vec2 & startPoint, const Volume* vol, float arcLength, float stepSize);
     // TODO: Build on the last assignment by copying the integrator code
     // here and in the respective .cpp. Mark a small change in the vector field sampling
     // (change the parameter VolumeRAM* to Volume*, i.e., vr to vol.get()).
