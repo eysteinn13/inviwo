@@ -1,12 +1,12 @@
 /*********************************************************************
- *  Author  : Himangshu Saikia
- *  Init    : Wednesday, September 20, 2017 - 12:04:15
- *
- *  Project : KTH Inviwo Modules
- *
- *  License : Follows the Inviwo BSD license model
- *********************************************************************
- */
+*  Author  : Himangshu Saikia
+*  Init    : Wednesday, September 20, 2017 - 12:04:15
+*
+*  Project : KTH Inviwo Modules
+*
+*  License : Follows the Inviwo BSD license model
+*********************************************************************
+*/
 
 #pragma once
 
@@ -18,28 +18,29 @@
 namespace inviwo
 {
 
-class IVW_MODULE_LABSTREAMLINES_API Integrator
-{ 
-//Friends
-//Types
-public:
+	class IVW_MODULE_LABSTREAMLINES_API Integrator
+	{
+		//Friends
+		//Types
+	public:
 
-//Construction / Deconstruction
-public:
-    Integrator();
-    virtual ~Integrator() = default;
+		//Construction / Deconstruction
+	public:
+		Integrator();
+		virtual ~Integrator() = default;
 
-//Methods
-public:
-    static vec2 sampleFromField(const VolumeRAM* vr, size3_t dims, const vec2& position);
+		//Methods
+	public:
+		static vec2 sampleFromField(const VolumeRAM* vr, size3_t dims, const vec2& position, const bool & normalize);
 
-    // TODO: Implement the methods below (one integration step with either Euler or 
-    // Runge-Kutte of 4th order integration method)
-    // Pass any other properties that influence the integration process
-    // Examples would be the stepsize, inegreation direction, ...
-    //static vec2 RK4(const VolumeRAM* vr, size3_t dims, const vec2& position, ...);
-    //static vec2 Euler(const VolumeRAM* vr, size3_t dims, const vec2& position, ...);
+		// TODO: Implement the methods below (one integration step with either Euler or 
+		// Runge-Kutte of 4th order integration method)
+		// Pass any other properties that influence the integration process
+		// Examples would be the stepsize, inegreation direction, ...
+		static vec2 RK4(const VolumeRAM* vr, size3_t dims, const vec2& position, float step_size, int direction, bool dir_field, bool& threshold, const float & threshold_value);
+		static vec2 Euler(const VolumeRAM* vr, size3_t dims, const vec2& position, float step_size, int direction);
+		static vec2 Sample(const VolumeRAM* vr, size3_t dims, const vec2& position, float step_size);
 
-};
+	};
 
 } // namespace

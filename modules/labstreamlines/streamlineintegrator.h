@@ -67,6 +67,15 @@ public:
     virtual const ProcessorInfo getProcessorInfo() const override;
     static const ProcessorInfo processorInfo_;
 
+	BoolProperty direction_field;
+	IntProperty direction;
+	IntProperty num_steps;
+	FloatProperty step_size;
+	FloatProperty arc_lenght;
+	FloatProperty stop_threshold;
+	IntProperty num_seeds;
+	IntProperty num_seeds_x;
+	IntProperty num_seeds_y;
 protected:
     /// Our main computation function
     virtual void process() override;
@@ -87,6 +96,7 @@ public:
     EventProperty mouseMoveStart;
     FloatVec2Property propStartPoint;
     TemplateOptionProperty<int> propSeedMode;
+	TemplateOptionProperty<int> multi_seed_method;
 
     // TODO: Declare additional properties
     // Some types that you might need are given below
@@ -100,6 +110,14 @@ public:
 private:
     // Dimensions of the current vector field
     size3_t dims;
+
+	void drawLineSegment(const vec2& v1, const vec2& v2, const vec4& color,
+		IndexBufferRAM* indexBuffer,
+		std::vector<BasicMesh::Vertex>& vertices);
+
+	void StreamlineIntegrator::createStreamLine(const vec2 & startPoint, const VolumeRAM* vr,
+		IndexBufferRAM* indexBufferRK, IndexBufferRAM* indexBufferPoints,
+		std::vector<BasicMesh::Vertex>& vertices);
 };
 
 }  // namespace inviwo

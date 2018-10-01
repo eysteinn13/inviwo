@@ -74,7 +74,7 @@ protected:
 
     // Get the input value from a 2-dimensional scalar field represented by a 3-dimensional volume
     double getInputValue(const VolumeRAM* data, const size3_t dims, 
-        const size_t i, const size_t j);
+        const size_t i, const size_t j, bool filter);
   
     // Draw a line segment from v1 to v2 with a color
     void drawLineSegment(const vec2& v1, const vec2& v2, const vec4& color,
@@ -98,13 +98,29 @@ public:
     TemplateOptionProperty<int> propMultiple;
     // Properties for choosing a single iso contour by value
     FloatProperty propIsoValue;
+	FloatProperty propSigma;
     FloatVec4Property propIsoColor;
     // Properties for multiple iso contours 
     IntProperty propNumContours;
     TransferFunctionProperty propIsoTransferFunc;
+	BoolProperty propGaussFilter;
 
 //Attributes
 private:
+
+	double ** SampleFromGrid(int x, int y, int dim, const VolumeRAM * vr, const size3_t dims);
+
+	void FilterCreation(double GKernel[3][3]);
+
+	//Returns true if value is lower than isovalue
+	bool midpointDecider(size_t x, size_t y, const VolumeRAM* vr, const size3_t dims);
+
+	//Returns true if value is lower than isovalue
+	bool asymptoticDecider(size_t x, size_t y, const VolumeRAM* vr, const size3_t dims);
+
+	double interpolate(float cord0, float cord1, float val0, float val1, double iso);
+
+	double ** filtered;
 
 };
 
