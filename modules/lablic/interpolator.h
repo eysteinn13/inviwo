@@ -27,7 +27,7 @@ class IVW_MODULE_LABLIC_API Interpolator {
 
     //Methods
   public:
-      static vec2 sampleFromField(const Volume* vol, const vec2& position);
+      static vec2 sampleFromField(const Volume* vol, const vec2& position, bool & belowThreshold);
       static double sampleFromGrayscaleImage(const ImageRAM* img, const vec2& position);
 };
 

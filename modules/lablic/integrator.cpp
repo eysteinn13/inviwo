@@ -15,12 +15,12 @@ namespace inviwo {
 
 Integrator::Integrator() {}
     
-vec2 Integrator::RK4(const Volume* vol, const vec2& position, float step_size)
+vec2 Integrator::RK4(const Volume* vol, const vec2& position, float step_size, bool & belowThreshold)
 {
-    vec2 v1 = Interpolator::sampleFromField(vol, position);
-    vec2 v2 = Interpolator::sampleFromField(vol, position + (step_size / 2) * v1);
-    vec2 v3 = Interpolator::sampleFromField(vol, position + (step_size / 2) * v2);
-    vec2 v4 = Interpolator::sampleFromField(vol, position + (step_size * v3));
+    vec2 v1 = Interpolator::sampleFromField(vol, position, belowThreshold);
+    vec2 v2 = Interpolator::sampleFromField(vol, position + (step_size / 2) * v1, belowThreshold);
+    vec2 v3 = Interpolator::sampleFromField(vol, position + (step_size / 2) * v2, belowThreshold);
+    vec2 v4 = Interpolator::sampleFromField(vol, position + (step_size * v3), belowThreshold);
     
     float step_x = v1.x / 6 + v2.x / 3 + v3.x / 3 + v4.x / 6;
     float step_y = v1.y / 6 + v2.y / 3 + v3.y / 3 + v4.y / 6;
@@ -34,27 +34,29 @@ std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Vo
     auto vr = vol->getRepresentation<VolumeRAM>();
     auto dims = vr->getDimensions();
     bool outOfBounds = false;
+	bool belowThreshold = false;
     vec2 prevPoint, nextPoint = startPoint;
     std::vector<vec2> vertices;
-    for (int i = 0; i < 0.5 * arcLength; i += stepSize)
+    for (float i = 0; i < 0.5 * arcLength; i += stepSize)
     {
-        nextPoint = RK4(vol, prevPoint, stepSize);
+        nextPoint = RK4(vol, prevPoint, stepSize, belowThreshold);
         outOfBounds = (nextPoint[0] < 0 || nextPoint[0] > dims[0] - 1 || nextPoint[1] < 0 || nextPoint[1] > dims[1] - 1);
 
-        if (outOfBounds)
+        if (outOfBounds || belowThreshold)
             break;
         vertices.push_back(nextPoint);
         prevPoint = nextPoint;
     }
     prevPoint = startPoint;
-    for (int i = 0; i < 0.5 * arcLength; i += stepSize, prevPoint = nextPoint)
+    for (float i = 0; i < 0.5 * arcLength; i += stepSize)
     {
-        nextPoint = RK4(vol, prevPoint, -stepSize);
+        nextPoint = RK4(vol, prevPoint, -stepSize, belowThreshold);
         outOfBounds = (nextPoint[0] < 0 || nextPoint[0] > dims[0] - 1 || nextPoint[1] < 0 || nextPoint[1] > dims[1] - 1);
         
-        if (outOfBounds)
+        if (outOfBounds || belowThreshold)
             break;
         vertices.push_back(nextPoint);
+		prevPoint = nextPoint;
     }
     return vertices;
 }

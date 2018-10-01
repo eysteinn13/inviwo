@@ -83,22 +83,20 @@ void LICProcessor::process() {
 	float pixelHeight = (float) dims.y / texDims_.y;
 	float stepSize = pixelLength < pixelHeight ? pixelLength : pixelHeight;
 
-	float arcLength = 0.5f;	
+	float arcLength = 15.f;	
     for (auto j = 0; j < texDims_.y; j++) {
         for (auto i = 0; i < texDims_.x; i++) {
 			
-			/*
 			auto vertices = Integrator::createStreamLine(vec2(i * stepSize, j * stepSize), vol.get(), arcLength, stepSize);
+			int counter = 0;
+			float val = 0.0f;
 			for(auto vertex : vertices)
 			{
-				float val = Interpolator::sampleFromGrayscaleImage(tr, vec2(vertex.x/stepSize, vertex.y/stepSize));
-				lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
+				val += Interpolator::sampleFromGrayscaleImage(tr, vec2(vertex.x/stepSize, vertex.y/stepSize));
+				counter++;
 			}
-			*/
-
-           //Interpolator::sampleFromGrayscaleImage(tr, size2_t(i, j));
-            //int val = int(licTexture[i][j]);
-            //lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
+			val /= counter;
+			lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
         }
     }
 

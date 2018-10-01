@@ -29,7 +29,7 @@ public:
 
 // Methods
 public:
-    static vec2 RK4(const Volume* vol, const vec2& position, float step_size);
+    static vec2 RK4(const Volume* vol, const vec2& position, float step_size, bool & belowThreshold);
     
     static std::vector<vec2> createStreamLine(const vec2 & startPoint, const Volume* vol, float arcLength, float stepSize);
     // TODO: Build on the last assignment by copying the integrator code
