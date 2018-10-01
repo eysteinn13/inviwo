@@ -42,13 +42,17 @@ vec2 Interpolator::sampleFromField(const Volume* vol, const vec2& position) {
     vec2 f;
 
     for (int i = 0; i < 2; i++) {
-        f[i] = f00[i] * (1 - x) * (1 - y) + f01[i] * (1 - x) * y + f10[i] * x * (1 - y) +
-               f11[i] * x * y;
-
+        f[i] = f00[i] * (1 - x) * (1 - y) + f01[i] * (1 - x) * y + f10[i] * x * (1 - y) + f11[i] * x * y;
         // Bring vector back to grid space.
         f[i] /= cellSize[i];
     }
-
+    
+    float denom = sqrt(pow(f[0], 2) + pow(f[1], 2));
+    if (denom > 1e-7)
+    {
+        f[0] = f[0] / denom;
+        f[1] = f[1] / denom;
+    }
     return f;
 }
 
