@@ -82,8 +82,8 @@ void NoiseTextureGenerator::process() {
 		srand(time(NULL));
 
 	//Color the pixels
-    for (int j = 0; j < texSize_.get().y; j++) {
-        for (int i = 0; i < texSize_.get().x; i++) {
+    for (int j = 0; j < texSize_.get().y-1; j++) {
+        for (int i = 0; i < texSize_.get().x-1; i++) {
 
             // Randomly sample values for the texture			
 			float r_temp = ((float)rand()) / (float)RAND_MAX;

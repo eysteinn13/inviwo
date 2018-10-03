@@ -73,8 +73,8 @@ void LICProcessor::process() {
 
     // To access the image at a floating point position, you can call
     //      Interpolator::sampleFromGrayscaleImage(tr, somePos)
-	float pixelLength = (float) dims.x / texDims_.x;
-	float pixelHeight = (float) dims.y / texDims_.y;
+	float pixelLength = (float) (dims.x - 1) / (texDims_.x);
+	float pixelHeight = (float) (dims.y -1) / (texDims_.y);
 	float stepSize = pixelLength < pixelHeight ? pixelLength : pixelHeight;
     bool ** exploredPixels = new bool*[texDims_.x];
     for (unsigned int i = 0; i < texDims_.x; i++) {
@@ -87,35 +87,35 @@ void LICProcessor::process() {
         for (unsigned int i = 0; i < texDims_.x; i++) {
             if (exploredPixels[i][j] == true) continue;
             // Create streamline
-			auto vertices = Integrator::createStreamLine(vec2(i * stepSize, j * stepSize), vol.get(), 1000, stepSize, exploredPixels);
+			auto vertices = Integrator::createStreamLine(vec2(i * pixelLength, j * pixelHeight), vol.get(), 1000, stepSize, exploredPixels, pixelLength, pixelHeight);
             if(vertices.size() == 0) continue;
             float currentSum = 0;
             std::queue<float> valueQueue;
             unsigned int queueHeader = 0;
             // Init first values in queue
             while(queueHeader < kernelSize.get() / 2 && queueHeader < vertices.size()) {
-                float val = Interpolator::sampleFromGrayscaleImage(tr, vec2(vertices[queueHeader].x / stepSize, vertices[queueHeader].y / stepSize));
+                float val = Interpolator::sampleFromGrayscaleImage(tr, vec2(vertices[queueHeader].x / pixelLength, vertices[queueHeader].y / pixelHeight));
                 currentSum += val;
                 valueQueue.push(val);
                 queueHeader++;
             }
             // find first point value
             float pointValue = currentSum / valueQueue.size();
-            unsigned int pixelIdxX = vertices[0].x / stepSize + 0.5f;
-            unsigned int pixelIdxY = vertices[0].y / stepSize + 0.5f;
+            unsigned int pixelIdxX = vertices[0].x / pixelLength;
+            unsigned int pixelIdxY = vertices[0].y / pixelHeight;
             // Draw first point
             lr->setFromDVec4(size2_t(pixelIdxX, pixelIdxY), dvec4(pointValue, pointValue, pointValue, 255));
 			for(size_t l = 1; l < vertices.size(); l++) {
 				vec2 vertex = vertices[l];
-				pixelIdxX = vertex.x / stepSize + 0.5f;
-				pixelIdxY = vertex.y / stepSize + 0.5f;
+				pixelIdxX = vertex.x / pixelLength;
+				pixelIdxY = vertex.y / pixelHeight;
                 if(pixelIdxX > texDims_.x || pixelIdxY > texDims_.y || pixelIdxY < 0 || pixelIdxX < 0) continue;
                 if(valueQueue.size() > kernelSize.get()) {
                     currentSum -= valueQueue.front();
                     valueQueue.pop();
                 }
                 if(queueHeader < vertices.size()) {
-                    float val = Interpolator::sampleFromGrayscaleImage(tr, vec2(vertices[queueHeader].x / stepSize, vertices[queueHeader].y / stepSize));
+                    float val = Interpolator::sampleFromGrayscaleImage(tr, vec2(vertices[queueHeader].x / pixelLength, vertices[queueHeader].y / pixelHeight));
                     currentSum += val;
                     valueQueue.push(val);
                 } else if(valueQueue.size() > kernelSize.get() / 2) {

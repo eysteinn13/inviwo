@@ -29,7 +29,7 @@ vec2 Integrator::RK4(const Volume* vol, const vec2& position, float step_size, b
     return next_point;
 }
 
-std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Volume* vol, float arcLength, float stepSize, bool ** explored)
+std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Volume* vol, float arcLength, float stepSize, bool ** explored , float pixleL, float pixleH)
 {
     auto vr = vol->getRepresentation<VolumeRAM>();
     auto dims = vr->getDimensions();
@@ -48,8 +48,8 @@ std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Vo
         if (outOfBounds)
             break;
         prevPoint = nextPoint;
-        if(!explored[(int)(nextPoint.x / stepSize + 0.5f)][(int)(nextPoint.y / stepSize + 0.5f)]) {
-            explored[(int)(nextPoint.x / stepSize + 0.5f)][(int)(nextPoint.y / stepSize + 0.5f)] = true;
+        if(!explored[(int)(nextPoint.x / pixleL)][(int)(nextPoint.y / pixleH)]) {
+            explored[(int)(nextPoint.x / pixleL)][(int)(nextPoint.y / pixleH)] = true;
             countSamePixel = 0;
         } else {
             countSamePixel++;
@@ -70,8 +70,8 @@ std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Vo
         if (outOfBounds)
             break;
         prevPoint = nextPoint;
-        if(!explored[(int)(nextPoint.x / stepSize + 0.5f)][(int)(nextPoint.y / stepSize + 0.5f)]) {
-            explored[(int)(nextPoint.x / stepSize + 0.5f)][(int)(nextPoint.y / stepSize + 0.5f)] = true;
+        if(!explored[(int)(nextPoint.x / pixleL)][(int)(nextPoint.y / pixleH)]) {
+            explored[(int)(nextPoint.x / pixleL)][(int)(nextPoint.y / pixleH)] = true;
             countSamePixel = 0;
         } else {
             countSamePixel++;
