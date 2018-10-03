@@ -86,21 +86,59 @@ void LICProcessor::process() {
 	float pixelLength = (float) dims.x / texDims_.x;
 	float pixelHeight = (float) dims.y / texDims_.y;
 	float stepSize = pixelLength < pixelHeight ? pixelLength : pixelHeight;
+	bool ** exploredPixels = new bool*[texDims_.x];
+	for (int i = 0; i < texDims_.x; i++)
+	{
+		exploredPixels[i] = new bool[texDims_.y];
+		for (int j = 0; j < texDims_.y; j++)
+			exploredPixels[i][j] = false;
+	}
 
 	float arcLength = kernelSize.get();
     for (auto j = 0; j < texDims_.y; j++) {
         for (auto i = 0; i < texDims_.x; i++) {
-			
-			auto vertices = Integrator::createStreamLine(vec2(i * stepSize, j * stepSize), vol.get(), arcLength, stepSize);
-			int counter = 0;
-			float val = 0.0f;
-			for(auto vertex : vertices)
+
+			if (exploredPixels[i][j] == true) continue;
+
+			auto vertices = Integrator::createStreamLine(vec2(i * stepSize, j * stepSize), vol.get(), 1000, stepSize);						
+			for(int i = 0; i < vertices.size(); i++)
 			{
-				val += Interpolator::sampleFromGrayscaleImage(tr, vec2(vertex.x/stepSize, vertex.y/stepSize));
-				counter++;
+				vec2 vertex = vertices[i];
+				int pixelIdxX = vertex.x / stepSize;
+				int pixelIdxY = vertex.y / stepSize;
+				exploredPixels[pixelIdxX][pixelIdxY] = true;
+
+				int idx = i;
+				int counter = 0;
+				int stepCount = 0;
+				float val = 0.0f;
+
+				for (float k = 0; k < kernelSize.get() / 2; k += stepSize)
+				{
+					if (i + stepCount > vertices.size()) break;
+					pixelIdxX = vertices[i + stepCount].x / stepSize;
+					pixelIdxY = vertices[i + stepCount].y / stepSize;
+					if (pixelIdxX < 0 || pixelIdxX > texDims_.x) break;
+					if (pixelIdxY < 0 || pixelIdxY > texDims_.y) break;
+
+					val += Interpolator::sampleFromGrayscaleImage(tr, vec2(pixelIdxX, pixelIdxY));
+					counter++;
+				}
+				stepCount = 1;
+				for (float k = stepSize; k < (kernelSize.get() - 1) / 2; k += stepSize)
+				{
+					if (i - stepCount < 0) break;
+					pixelIdxX = vertices[i - stepCount].x / stepSize;
+					pixelIdxY = vertices[i - stepCount].y / stepSize;
+					if (pixelIdxX < 0 || pixelIdxX > texDims_.x) break;
+					if (pixelIdxY < 0 || pixelIdxY > texDims_.y) break;
+
+					val += Interpolator::sampleFromGrayscaleImage(tr, vec2(pixelIdxX, pixelIdxY));
+					counter++;
+				}
+				val /= counter;
+				lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));			
 			}
-			val /= counter;
-			lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
         }
     }
 

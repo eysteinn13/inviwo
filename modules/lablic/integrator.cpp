@@ -28,7 +28,7 @@ vec2 Integrator::RK4(const Volume* vol, const vec2& position, float step_size, b
                     position.y + (step_size * step_y));
     return next_point;
 }
-    
+
 std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Volume* vol, float arcLength, float stepSize)
 {
     auto vr = vol->getRepresentation<VolumeRAM>();
@@ -36,7 +36,7 @@ std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Vo
     bool outOfBounds = false;
 	bool belowThreshold = false;
     vec2 prevPoint, nextPoint = startPoint;
-    std::vector<vec2> vertices;
+    std::vector<vec2> vertices_front;
     for (float i = 0; i < 0.5 * arcLength; i += stepSize)
     {
         nextPoint = RK4(vol, prevPoint, stepSize, belowThreshold);
@@ -44,10 +44,12 @@ std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Vo
 
         if (outOfBounds || belowThreshold)
             break;
-        vertices.push_back(nextPoint);
+        vertices_front.push_back(nextPoint);
         prevPoint = nextPoint;
     }
     prevPoint = startPoint;
+
+	std::vector<vec2> vertices_back;
     for (float i = 0; i < 0.5 * arcLength; i += stepSize)
     {
         nextPoint = RK4(vol, prevPoint, -stepSize, belowThreshold);
@@ -55,10 +57,12 @@ std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Vo
         
         if (outOfBounds || belowThreshold)
             break;
-        vertices.push_back(nextPoint);
+		vertices_back.push_back(nextPoint);
 		prevPoint = nextPoint;
     }
-    return vertices;
+	std::reverse(vertices_back.begin(), vertices_back.end());
+	vertices_back.insert(vertices_back.end(), vertices_front.begin(), vertices_front.end());
+    return vertices_back;
 }
 
 
