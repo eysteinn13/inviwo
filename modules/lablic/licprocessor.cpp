@@ -100,7 +100,7 @@ void LICProcessor::process() {
             unsigned int pixelIdxY = vertices[0].y / stepSize;
             exploredPixels[pixelIdxX][pixelIdxY] = true;
             // Draw first point
-            lr->setFromDVec4(size2_t(pixelIdxX, vpixelIdxY), dvec4(pointValue, pointValue, pointValue, 255));
+            lr->setFromDVec4(size2_t(pixelIdxX, pixelIdxY), dvec4(pointValue, pointValue, pointValue, 255));
 			for(size_t l = 1; l < vertices.size(); l++) {
 				vec2 vertex = vertices[l];
 				pixelIdxX = vertex.x / stepSize;
