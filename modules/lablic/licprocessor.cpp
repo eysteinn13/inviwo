@@ -32,12 +32,12 @@ LICProcessor::LICProcessor()
     , volumeIn_("volIn")
     , noiseTexIn_("noiseTexIn")
     , licOut_("licOut")
-	, fast("fast", "Fast LIC", false)
 	, kernelSize("kernelSize", "Kernel Size", 15, 3, 1000)
     , desiredU("desiredU", "U for contrast", 128, 0, 255)
     , desiredSigma("desiredSigma", "Sigma for contrast", 50, 0, 100, 0.001)
     , useContrast("useContrast", "Use contrast", false)
 	, fastLic("fastLic", "Fast LIC", false)
+	, useColor("useColor", "Use Color", false)
 {
     // Register ports
     addPort(volumeIn_);
@@ -45,11 +45,12 @@ LICProcessor::LICProcessor()
     addPort(licOut_);
 
     // Register properties
-	addProperty(fast);
 	addProperty(kernelSize);
     addProperty(desiredU);
     addProperty(desiredSigma);
     addProperty(useContrast);
+	addProperty(fastLic);
+	addProperty(useColor);
 }
 
     void LICProcessor::contrast(LayerRAM * lr, const ImageRAM * tr){
@@ -125,6 +126,8 @@ void LICProcessor::process() {
             exploredPixels[i][j] = false;
     }
     
+	float largestMagnitute = 0.0f;
+
 	if(fastLic.get())
 	{
 		for (unsigned int j = 0; j < texDims_.y; j++) {
@@ -179,7 +182,7 @@ void LICProcessor::process() {
 		for (auto j = 0; j < texDims_.y; j++) {
 			for (auto i = 0; i < texDims_.x; i++) {
 
-				auto vertices = Integrator::createStreamLineSlow(vec2(i * stepSize, j * stepSize), vol.get(), kernelSize.get(), stepSize, pixelLength, pixelHeight, texDims_);
+				auto vertices = Integrator::createStreamLineSlow(vec2(i * stepSize, j * stepSize), vol.get(), kernelSize.get(), stepSize, pixelLength, pixelHeight, texDims_, largestMagnitute);
 				int counter = 0;
 				float val = 0.0f;
 				for (auto vertex : vertices)
@@ -188,7 +191,25 @@ void LICProcessor::process() {
 					counter++;
 				}
 				val /= counter;
-				lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
+
+				if(useColor.get())
+				{
+					if (val > 120)
+					{
+						float magnitute;
+						bool threshold;
+						Interpolator::sampleFromField(vol.get(), vec2(i, j), threshold, magnitute);
+						float color = ((magnitute) / (largestMagnitute)) * 255;
+						lr->setFromDVec4(size2_t(i, j), dvec4(0, 0, color, 255));
+
+					}
+					else
+					{
+						lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
+					}
+				}
+				else
+					lr->setFromDVec4(size2_t(i, j), dvec4(val, val, val, 255));
 			}
 		}
 	}

@@ -12,7 +12,7 @@
 
 namespace inviwo {
 
-vec2 Interpolator::sampleFromField(const Volume* vol, const vec2& position, bool & belowThreshold) {
+vec2 Interpolator::sampleFromField(const Volume* vol, const vec2& position, bool & belowThreshold, float & magnitute) {
 
     auto vr = vol->getRepresentation<VolumeRAM>();
     auto dims = vr->getDimensions();
@@ -48,6 +48,7 @@ vec2 Interpolator::sampleFromField(const Volume* vol, const vec2& position, bool
     }
     
     float denom = sqrt(pow(f[0], 2) + pow(f[1], 2));
+	magnitute = denom;
     if (denom > 1e-4)
     {
         f[0] = f[0] / denom;

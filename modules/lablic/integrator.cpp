@@ -16,11 +16,12 @@ namespace inviwo {
 Integrator::Integrator() {}
     
 vec2 Integrator::RK4(const Volume* vol, const vec2& position, float step_size, bool & belowThreshold)
-{
-    vec2 v1 = Interpolator::sampleFromField(vol, position, belowThreshold);
-    vec2 v2 = Interpolator::sampleFromField(vol, position + (step_size / 2) * v1, belowThreshold);
-    vec2 v3 = Interpolator::sampleFromField(vol, position + (step_size / 2) * v2, belowThreshold);
-    vec2 v4 = Interpolator::sampleFromField(vol, position + (step_size * v3), belowThreshold);
+{   
+	float magnitute = 0;
+	vec2 v1 = Interpolator::sampleFromField(vol, position, belowThreshold, magnitute);
+    vec2 v2 = Interpolator::sampleFromField(vol, position + (step_size / 2) * v1, belowThreshold, magnitute);
+    vec2 v3 = Interpolator::sampleFromField(vol, position + (step_size / 2) * v2, belowThreshold, magnitute);
+    vec2 v4 = Interpolator::sampleFromField(vol, position + (step_size * v3), belowThreshold, magnitute);
     
     float step_x = v1.x / 6 + v2.x / 3 + v3.x / 3 + v4.x / 6;
     float step_y = v1.y / 6 + v2.y / 3 + v3.y / 3 + v4.y / 6;
@@ -29,7 +30,7 @@ vec2 Integrator::RK4(const Volume* vol, const vec2& position, float step_size, b
     return next_point;
 }
 
-std::vector<vec2> Integrator::createStreamLineSlow(const vec2 & startPoint, const Volume* vol, float arcLength, float stepSize, float pixleL, float pixleH, size2_t dimsTex)
+std::vector<vec2> Integrator::createStreamLineSlow(const vec2 & startPoint, const Volume* vol, float arcLength, float stepSize, float pixleL, float pixleH, size2_t dimsTex, float & largest)
 {
 	auto vr = vol->getRepresentation<VolumeRAM>();
 	auto dims = vr->getDimensions();
@@ -45,6 +46,12 @@ std::vector<vec2> Integrator::createStreamLineSlow(const vec2 & startPoint, cons
 		if (outOfBounds || pixelOffGrid)
 			break;
 
+		bool threshold;
+		float magnitutue = 0.0f;
+		Interpolator::sampleFromField(vol, nextPoint, threshold, magnitutue);
+		if (magnitutue > largest)
+			largest = magnitutue;
+
 		vertices.push_back(nextPoint);
 		prevPoint = nextPoint;
 	}
@@ -56,6 +63,12 @@ std::vector<vec2> Integrator::createStreamLineSlow(const vec2 & startPoint, cons
 		bool pixelOffGrid = (((int)(nextPoint.x / pixleL) > dimsTex.x - 2) || ((int)(nextPoint.y / pixleH) > dimsTex.y - 2));
 		if (outOfBounds || pixelOffGrid)
 			break;
+
+		bool threshold;
+		float magnitutue = 0.0f;
+		Interpolator::sampleFromField(vol, nextPoint, threshold, magnitutue);
+		if (magnitutue > largest)
+			largest = magnitutue;
 
 		vertices.push_back(nextPoint);
 		prevPoint = nextPoint;
