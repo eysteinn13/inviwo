@@ -36,7 +36,7 @@ LICProcessor::LICProcessor()
     , desiredU("desiredU", "U for contrast", 128, 0, 255)
     , desiredSigma("desiredSigma", "Sigma for contrast", 50, 0, 100, 0.001)
     , useContrast("useContrast", "Use contrast", false)
-	, fastLic("fastLic", "Fast LIC", false)
+	, fastLic("fastLic", "Fast LIC", true)
 	, useColor("useColor", "Use Color", false)
 {
     // Register ports
@@ -130,11 +130,12 @@ void LICProcessor::process() {
 
 	if(fastLic.get())
 	{
+        float largest = 0;
 		for (unsigned int j = 0; j < texDims_.y; j++) {
 			for (unsigned int i = 0; i < texDims_.x; i++) {
 				if (exploredPixels[i][j] == true) continue;
 				// Create streamline
-				auto vertices = Integrator::createStreamLine(vec2(i * pixelLength, j * pixelHeight), vol.get(), 1000, stepSize, exploredPixels, pixelLength, pixelHeight);
+				auto vertices = Integrator::createStreamLine(vec2(i * pixelLength, j * pixelHeight), vol.get(), 1000, stepSize, exploredPixels, pixelLength, pixelHeight, largest);
 				if(vertices.size() == 0) continue;
 				float currentSum = 0;
 				std::queue<float> valueQueue;
@@ -171,7 +172,25 @@ void LICProcessor::process() {
 					}
 					queueHeader++;
 					pointValue = currentSum / valueQueue.size();
-					lr->setFromDVec4(size2_t(pixelIdxX, pixelIdxY), dvec4(pointValue, pointValue, pointValue, 255));
+                    if(useColor.get())
+                    {
+                        if (pointValue > 120)
+                        {
+                            float magnitute;
+                            bool threshold;
+                            Interpolator::sampleFromField(vol.get(), vec2(i, j), threshold, magnitute);
+                            float color = ((magnitute) / (largestMagnitute)) * 255;
+                            lr->setFromDVec4(size2_t(i, j), dvec4(0, 0, color, 255));
+                            
+                        }
+                        else
+                        {
+                            lr->setFromDVec4(size2_t(i, j), dvec4(pointValue, pointValue, pointValue, 255));
+                        }
+                    }
+                    else{
+                        lr->setFromDVec4(size2_t(i, j), dvec4(pointValue, pointValue, pointValue, 255));
+                    }
 
 				}
 			}
