@@ -29,6 +29,40 @@ vec2 Integrator::RK4(const Volume* vol, const vec2& position, float step_size, b
     return next_point;
 }
 
+std::vector<vec2> Integrator::createStreamLineSlow(const vec2 & startPoint, const Volume* vol, float arcLength, float stepSize, float pixleL, float pixleH, size2_t dimsTex)
+{
+	auto vr = vol->getRepresentation<VolumeRAM>();
+	auto dims = vr->getDimensions();
+	bool outOfBounds = false;
+	bool belowThreshold = false;
+	vec2 prevPoint, nextPoint = startPoint;
+	std::vector<vec2> vertices;
+	for (float i = 0; i < 0.5 * arcLength; i += stepSize)
+	{
+		nextPoint = RK4(vol, prevPoint, stepSize, belowThreshold);
+		outOfBounds = (nextPoint[0] < 0 || nextPoint[0] > dims[0] - 1 || nextPoint[1] < 0 || nextPoint[1] > dims[1] - 1);
+		bool pixelOffGrid = (((int)(nextPoint.x / pixleL) > dimsTex.x - 2) || ((int)(nextPoint.y / pixleH) > dimsTex.y - 2));
+		if (outOfBounds || pixelOffGrid)
+			break;
+
+		vertices.push_back(nextPoint);
+		prevPoint = nextPoint;
+	}
+	prevPoint = startPoint;
+	for (float i = 0; i < 0.5 * arcLength; i += stepSize)
+	{
+		nextPoint = RK4(vol, prevPoint, -stepSize, belowThreshold);
+		outOfBounds = (nextPoint[0] < 0 || nextPoint[0] > dims[0] - 1 || nextPoint[1] < 0 || nextPoint[1] > dims[1] - 1);
+		bool pixelOffGrid = (((int)(nextPoint.x / pixleL) > dimsTex.x - 2) || ((int)(nextPoint.y / pixleH) > dimsTex.y - 2));
+		if (outOfBounds || pixelOffGrid)
+			break;
+
+		vertices.push_back(nextPoint);
+		prevPoint = nextPoint;
+	}
+	return vertices;
+}
+
 std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Volume* vol, float arcLength, float stepSize, bool ** explored , float pixleL, float pixleH)
 {
     auto vr = vol->getRepresentation<VolumeRAM>();

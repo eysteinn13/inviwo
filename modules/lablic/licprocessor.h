@@ -80,6 +80,7 @@ public:
     FloatProperty desiredU;
     FloatProperty desiredSigma;
     BoolProperty useContrast;
+	BoolProperty fastLic;
 // TODO: Declare properties
 // IntProperty prop1;
 // BoolProperty prop2;
