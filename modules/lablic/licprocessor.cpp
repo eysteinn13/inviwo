@@ -34,6 +34,9 @@ LICProcessor::LICProcessor()
     , licOut_("licOut")
 	, fast("fast", "Fast LIC", false)
 	, kernelSize("kernelSize", "Kernel Size", 15, 3, 1000)
+    , desiredU("desiredU", "U for contrast", 128, 0, 255)
+    , desiredSigma("desiredSigma", "Sigma for contrast", 50, 0, 100, 0.001)
+    , useContrast("useContrast", "Use contrast", false)
 {
     // Register ports
     addPort(volumeIn_);
@@ -43,8 +46,46 @@ LICProcessor::LICProcessor()
     // Register properties
 	addProperty(fast);
 	addProperty(kernelSize);
+    addProperty(desiredU);
+    addProperty(desiredSigma);
+    addProperty(useContrast);
 }
 
+    void LICProcessor::contrast(LayerRAM * lr, const ImageRAM * tr){
+        float u = 0;
+        float P = 0;
+        int n = 0;
+        for (unsigned int j = 0; j < texDims_.y; j++) {
+            for (unsigned int i = 0; i < texDims_.x; i++) {
+                float val = Interpolator::sampleFromGrayscaleImage(tr, vec2(i,j));
+                if(val != 0) {
+                    u += val;
+                    P += pow(val,2);
+                    n ++;
+                }
+            }
+        }
+        u /= n;
+        float sigma = sqrt((P-n*pow(u, 2))/(n-1));
+        float f = desiredSigma.get()/sigma;
+        for (unsigned int j = 0; j < texDims_.y - 1; j++) {
+            for (unsigned int i = 0; i < texDims_.x - 1; i++) {
+                float val = Interpolator::sampleFromGrayscaleImage(tr, vec2(i,j));
+                if(val != 0) {
+                    float new_P = desiredU.get() + f*(val - u);
+                    if(new_P > 255){
+                        new_P = 255;
+                    }
+                    if (new_P < 0){
+                        new_P = 0;
+                    }
+                    lr->setFromDVec4(size2_t(i, j), dvec4(new_P, new_P, new_P, 255));
+                }
+            }
+        }
+    }
+    
+    
 void LICProcessor::process() {
     // Get input
     if (!volumeIn_.hasData()) {
@@ -129,7 +170,9 @@ void LICProcessor::process() {
 			}
         }
     }
-
+    if(useContrast.get()){
+         contrast(lr, outImage -> getRepresentation<ImageRAM>());
+    }
     licOut_.setData(outImage);
 }
 

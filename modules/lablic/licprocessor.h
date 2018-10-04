@@ -56,7 +56,9 @@ public:
 protected:
     // Our main computation function
     virtual void process() override;
-
+    void contrast(LayerRAM * lr, const ImageRAM * tr);
+    
+    
     // (TODO: Helper functions can be defined here and then implemented in the .cpp)
     // e.g. something like a function for standardLIC, fastLIC, autoContrast, ...
 
@@ -75,7 +77,9 @@ public:
 public:
 	BoolProperty fast;
 	FloatProperty kernelSize;
-
+    FloatProperty desiredU;
+    FloatProperty desiredSigma;
+    BoolProperty useContrast;
 // TODO: Declare properties
 // IntProperty prop1;
 // BoolProperty prop2;
