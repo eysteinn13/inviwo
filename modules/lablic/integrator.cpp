@@ -76,7 +76,7 @@ std::vector<vec2> Integrator::createStreamLineSlow(const vec2 & startPoint, cons
 	return vertices;
 }
 
-std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Volume* vol, float arcLength, float stepSize, bool ** explored , float pixleL, float pixleH)
+std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Volume* vol, float arcLength, float stepSize, bool ** explored , float pixleL, float pixleH, float & largest)
 {
     auto vr = vol->getRepresentation<VolumeRAM>();
     auto dims = vr->getDimensions();
@@ -104,6 +104,11 @@ std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Vo
                 break;
             }
         }
+        bool threshold;
+        float magnitutue = 0.0f;
+        Interpolator::sampleFromField(vol, nextPoint, threshold, magnitutue);
+        if (magnitutue > largest)
+            largest = magnitutue;
         verticesFront.push_back(nextPoint);
     }
     prevPoint = startPoint;
@@ -126,6 +131,11 @@ std::vector<vec2> Integrator::createStreamLine(const vec2 & startPoint, const Vo
                 break;
             }
         }
+        bool threshold;
+        float magnitutue = 0.0f;
+        Interpolator::sampleFromField(vol, nextPoint, threshold, magnitutue);
+        if (magnitutue > largest)
+            largest = magnitutue;
 		vertices_back.push_back(nextPoint);
     }
 	std::reverse(vertices_back.begin(), vertices_back.end());
