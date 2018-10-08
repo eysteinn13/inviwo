@@ -12,6 +12,7 @@
 #include <labtopo/interpolator.h>
 #include <labtopo/topology.h>
 #include <labtopo/utils/gradients.h>
+#include <labstreamlines/streamlineintegrator.h>
 #include <math.h>
 #include <utility>
 
@@ -101,9 +102,10 @@ void Topology::process()
 	LogProcessorInfo("Number of critical points: " << criticalPoints.size());
 	
 	for (auto point : criticalPoints) {
+		vec4 color = getCritPointColor(point, vol.get(), vr, indexBufferSeparatrices, indexBufferPoints, vertices);
 		indexBufferPoints->add(static_cast<std::uint32_t>(vertices.size()));		
 		vertices.push_back({	vec3(point.x / (dims[0] - 1), point.y / (dims[1] - 1), 0), 
-								vec3(0), vec3(0), getCritPointColor(point, vol.get()) });
+								vec3(0), vec3(0),  });
 	}
 
     mesh->addVertices(vertices);
@@ -111,8 +113,11 @@ void Topology::process()
 }
 
 
-vec4 Topology::getCritPointColor(vec2 point, const Volume * vol)
+vec4 Topology::getCritPointColor(	vec2 point, const Volume * vol, const VolumeRAM * vr, 
+									IndexBufferRAM* indexBufferRK, IndexBufferRAM* indexBufferPoints, 
+									std::vector<BasicMesh::Vertex>& vertices)
 {
+	StreamlineIntegrator integrator;
 	mat2 jacobian = Interpolator::sampleJacobian(vol, point);
 	auto eigenRes = util::eigenAnalysis(jacobian);
 	vec2 imaginaries = eigenRes.eigenvaluesIm;
@@ -120,7 +125,10 @@ vec4 Topology::getCritPointColor(vec2 point, const Volume * vol)
 
 	if (approxEq(imaginaries[0], 0) && approxEq(imaginaries[1], 0)) {
 		if ((reals[0] < 0 && reals[1] > 0) || (reals[1] < 0 && reals[0] > 0))
+		{ 			
+			integrator.createStreamLine(point, vr, indexBufferRK, indexBufferPoints, vertices);
 			return ColorsCP[0];
+		}
 		if (reals[0] < 0 && reals[1] < 0)
 			return ColorsCP[1];
 		if (reals[0] > 0 && reals[1] > 0)

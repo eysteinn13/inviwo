@@ -67,6 +67,10 @@ public:
     virtual const ProcessorInfo getProcessorInfo() const override;
     static const ProcessorInfo processorInfo_;
 
+	void createStreamLine(const vec2 & startPoint, const VolumeRAM* vr,
+		IndexBufferRAM* indexBufferRK, IndexBufferRAM* indexBufferPoints,
+		std::vector<BasicMesh::Vertex>& vertices);
+
 	BoolProperty direction_field;
 	IntProperty direction;
 	IntProperty num_steps;
@@ -113,10 +117,6 @@ private:
 
 	void drawLineSegment(const vec2& v1, const vec2& v2, const vec4& color,
 		IndexBufferRAM* indexBuffer,
-		std::vector<BasicMesh::Vertex>& vertices);
-
-	void createStreamLine(const vec2 & startPoint, const VolumeRAM* vr,
-		IndexBufferRAM* indexBufferRK, IndexBufferRAM* indexBufferPoints,
 		std::vector<BasicMesh::Vertex>& vertices);
 };
 
