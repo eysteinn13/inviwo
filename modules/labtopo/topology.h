@@ -15,6 +15,7 @@
 #include <inviwo/core/properties/eventproperty.h>
 #include <inviwo/core/properties/ordinalproperty.h>
 #include <labtopo/labtopomoduledefine.h>
+#include <inviwo/core/datastructures/geometry/basicmesh.h>
 
 namespace inviwo
 {
