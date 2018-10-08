@@ -43,7 +43,7 @@ const ProcessorInfo Topology::getProcessorInfo() const
 
 Topology::Topology()
     : Processor(), outMesh("meshOut"), inData("inData")
-	, squareSizeThreshold("squareSizeThreshold", "Square Size Threshold", 0.1, 0.0001, 1, 0.0001)
+	, squareSizeThreshold("squareSizeThreshold", "Square Size Threshold", 0.3, 0.0001, 1, 0.0001)
 // TODO: Initialize additional properties
 // propertyName("propertyIdentifier", "Display Name of the Propery",
 // default value (optional), minimum value (optional), maximum value (optional), increment (optional));
@@ -86,14 +86,22 @@ void Topology::process()
 
     // Looping through all values in the vector field.
 	std::vector<vec2> criticalPoints;
-	for (int y = 0; y < dims[1] - 2; ++y) {
-		for (int x = 0; x < dims[0] - 2; ++x) {
+	for (int y = 0; y < dims[1] - 1; ++y) {
+		for (int x = 0; x < dims[0] - 1; ++x) {
 			vec2 bottomLeft(x, y);
 			vec2 bottomRight(x + 1, y);
 			vec2 topLeft(x, y + 1);
 			vec2 topRight(x + 1, y + 1);			
 			zeroPossible(bottomLeft, bottomRight, topLeft, topRight, vol.get(), criticalPoints);
 		}
+	}
+
+	LogProcessorInfo("Number of critical points: " << criticalPoints.size());
+	
+	for (auto point : criticalPoints)
+	{
+		indexBufferPoints->add(static_cast<std::uint32_t>(vertices.size()));
+		vertices.push_back({ vec3(point.x / (dims[0] - 1), point.y / (dims[1] - 1), 0), vec3(0), vec3(0), vec4(1, 0, 0, 1) });   
 	}
 
     mesh->addVertices(vertices);
@@ -143,8 +151,8 @@ void Topology::zeroPossible(dvec2 bottomLeft, dvec2 bottomRight, dvec2 topLeft, 
 	if (squareSize < squareSizeThreshold.get() && zeroInSquare)
 	{
 		dvec2 centerPoint = bottomLeft;
-		bottomLeft.x += offsetX;
-		bottomLeft.y += offsetY;
+		centerPoint.x += offsetX;
+		centerPoint.y += offsetY;
 
 		critPoints.push_back(centerPoint);
 		return;
