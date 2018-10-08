@@ -64,8 +64,7 @@ Topology::Topology()
 void Topology::process()
 {
     // Get input
-    if (!inData.hasData())
-    {
+    if (!inData.hasData()) {
         return;
     }
     auto vol = inData.getData();
@@ -89,8 +88,8 @@ void Topology::process()
 
     // Looping through all values in the vector field.
 	std::vector<vec2> criticalPoints;
-	for (int y = 0; y < dims[1] - 1; ++y) {
-		for (int x = 0; x < dims[0] - 1; ++x) {
+	for (unsigned int y = 0; y < dims[1] - 1; ++y) {
+		for (unsigned int x = 0; x < dims[0] - 1; ++x) {
 			vec2 bottomLeft(x, y);
 			vec2 bottomRight(x + 1, y);
 			vec2 topLeft(x, y + 1);
@@ -101,8 +100,7 @@ void Topology::process()
 
 	LogProcessorInfo("Number of critical points: " << criticalPoints.size());
 	
-	for (auto point : criticalPoints)
-	{
+	for (auto point : criticalPoints) {
 		indexBufferPoints->add(static_cast<std::uint32_t>(vertices.size()));		
 		vertices.push_back({	vec3(point.x / (dims[0] - 1), point.y / (dims[1] - 1), 0), 
 								vec3(0), vec3(0), getCritPointColor(point, vol.get()) });
@@ -120,36 +118,21 @@ vec4 Topology::getCritPointColor(vec2 point, const Volume * vol)
 	vec2 imaginaries = eigenRes.eigenvaluesIm;
 	vec2 reals = eigenRes.eigenvaluesRe;
 
-	if (approxEq(imaginaries[0], 0) && approxEq(imaginaries[1], 0))
-	{
-		if (reals[0] < 0 && reals[1] > 0 || reals[1] < 0 && reals[0] > 0)
-		{
+	if (approxEq(imaginaries[0], 0) && approxEq(imaginaries[1], 0)) {
+		if ((reals[0] < 0 && reals[1] > 0) || (reals[1] < 0 && reals[0] > 0))
 			return ColorsCP[0];
-		}
 		if (reals[0] < 0 && reals[1] < 0)
-		{
 			return ColorsCP[1];
-		}
 		if (reals[0] > 0 && reals[1] > 0)
-		{
 			return ColorsCP[2];
-		}
 	}
-	else if (approxEq(imaginaries[0], -1 * imaginaries[1]) && !approxEq(imaginaries[0], 0))
-	{
+	else if (approxEq(imaginaries[0], -1 * imaginaries[1]) && !approxEq(imaginaries[0], 0)) {
 		if (approxEq(reals[0], reals[1]) && reals[0] < 0)
-		{
 			return ColorsCP[3];
-		}
+        if (approxEq(reals[0], 0) && approxEq(reals[1], 0))
+            return ColorsCP[5];
 		if (reals[0] > 0 && reals[1] > 0)
-		{
-			return ColorsCP[4];
-		}
-		if (approxEq(reals[0], 0) && approxEq(reals[1], 0))
-		{
-			return ColorsCP[5];
-		}
-	}	
+			return ColorsCP[4];	}
 	return vec4(0, 0, 0, 1);
 }
 
@@ -171,20 +154,16 @@ void Topology::findCriticalPoints(vec2 bottomLeft, vec2 bottomRight, vec2 topLef
 	vec2 topLeftVal = Interpolator::sampleFromField(vol, topLeft);
 	vec2 topRightVal = Interpolator::sampleFromField(vol, topRight);
 
-	bool xPos = false;
-	bool yPos = false;
-	bool xNeg = false;
-	bool yNeg = false;
+	bool xPos, yPos, xNeg, yNeg = false;
+	xPos = bottomLeftVal.x > 0
+		|| bottomRightVal.x > 0
+		|| topLeftVal.x > 0
+		|| topRightVal.x > 0;
 
-	xPos = bottomLeftVal.x >= 0
-		|| bottomRightVal.x >= 0
-		|| topLeftVal.x >= 0
-		|| topRightVal.x >= 0;
-
-	yPos = bottomLeftVal.y >= 0
-		|| bottomRightVal.y >= 0
-		|| topLeftVal.y >= 0
-		|| topRightVal.y >= 0;
+	yPos = bottomLeftVal.y > 0
+		|| bottomRightVal.y > 0
+		|| topLeftVal.y > 0
+		|| topRightVal.y > 0;
 
 	xNeg = bottomLeftVal.x < 0
 		|| bottomRightVal.x < 0
@@ -198,8 +177,7 @@ void Topology::findCriticalPoints(vec2 bottomLeft, vec2 bottomRight, vec2 topLef
 
 	bool zeroInSquare = xPos && yPos && xNeg && yNeg;
 	
-	if (squareSize < squareSizeThreshold.get() && zeroInSquare)
-	{
+	if (squareSize < squareSizeThreshold.get() && zeroInSquare) {
 		dvec2 centerPoint = bottomLeft;
 		centerPoint.x += offsetX;
 		centerPoint.y += offsetY;
@@ -207,8 +185,7 @@ void Topology::findCriticalPoints(vec2 bottomLeft, vec2 bottomRight, vec2 topLef
 		critPoints.push_back(centerPoint);
 		return;
 	}
-	else if(zeroInSquare)
-	{
+	else if(zeroInSquare) {
 		vec2 midPointLeft = bottomLeft;
 		midPointLeft.y += offsetY;
 		vec2 midPointRight = bottomRight;
