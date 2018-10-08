@@ -12,6 +12,7 @@
 #include <labtopo/interpolator.h>
 #include <labtopo/topology.h>
 #include <labtopo/utils/gradients.h>
+#include <math.h>
 
 namespace inviwo
 {
@@ -42,6 +43,7 @@ const ProcessorInfo Topology::getProcessorInfo() const
 
 Topology::Topology()
     : Processor(), outMesh("meshOut"), inData("inData")
+	, squareSizeThreshold("squareSizeThreshold", "Square Size Threshold", 0.1, 0.0001, 1, 0.0001)
 // TODO: Initialize additional properties
 // propertyName("propertyIdentifier", "Display Name of the Propery",
 // default value (optional), minimum value (optional), maximum value (optional), increment (optional));
@@ -53,6 +55,7 @@ Topology::Topology()
 
     // TODO: Register additional properties
     // addProperty(propertyName);
+	addProperty(squareSizeThreshold);
 }
 
 void Topology::process()
@@ -82,12 +85,89 @@ void Topology::process()
     // You can use your previous integration code (copy it over or call it from <lablic/integrator.h>).
 
     // Looping through all values in the vector field.
-    for (int y = 0; y < dims[1]; ++y)
-        for (int x = 0; x < dims[0]; ++x)
-            dvec2 vectorValue = vr->getAsDVec2(uvec3(x, y, 0));
+	std::vector<vec2> criticalPoints;
+	for (int y = 0; y < dims[1] - 2; ++y) {
+		for (int x = 0; x < dims[0] - 2; ++x) {
+			vec2 bottomLeft(x, y);
+			vec2 bottomRight(x + 1, y);
+			vec2 topLeft(x, y + 1);
+			vec2 topRight(x + 1, y + 1);			
+			zeroPossible(bottomLeft, bottomRight, topLeft, topRight, vol.get(), criticalPoints);
+		}
+	}
 
     mesh->addVertices(vertices);
     outMesh.setData(mesh);
+}
+
+void Topology::zeroPossible(dvec2 bottomLeft, dvec2 bottomRight, dvec2 topLeft, dvec2 topRight, const Volume * vol, std::vector<vec2> & critPoints)
+{
+	float diffX = topRight.x - topLeft.x;
+	float diffY = topRight.y - bottomRight.y;
+	float squareSize = diffX * diffY;
+	float offsetX = diffX / 2;
+	float offsetY = diffY / 2;
+
+	vec2 bottomLeftVal = Interpolator::sampleFromField(vol, bottomLeft);
+	vec2 bottomRightVal = Interpolator::sampleFromField(vol, bottomRight);
+	vec2 topLeftVal = Interpolator::sampleFromField(vol, topLeft);
+	vec2 topRightVal = Interpolator::sampleFromField(vol, topRight);
+
+	bool xPos = false;
+	bool yPos = false;
+	bool xNeg = false;
+	bool yNeg = false;
+
+	xPos = bottomLeftVal.x >= 0
+		|| bottomRightVal.x >= 0
+		|| topLeftVal.x >= 0
+		|| topRightVal.x >= 0;
+
+	yPos = bottomLeftVal.y >= 0
+		|| bottomRightVal.y >= 0
+		|| topLeftVal.y >= 0
+		|| topRightVal.y >= 0;
+
+	xNeg = bottomLeftVal.x < 0
+		|| bottomRightVal.x < 0
+		|| topLeftVal.x < 0
+		|| topRightVal.x < 0;
+
+	yNeg = bottomLeftVal.y < 0
+		|| bottomRightVal.y < 0
+		|| topLeftVal.y < 0
+		|| topRightVal.y < 0;
+
+	bool zeroInSquare = xPos && yPos && xNeg && yNeg;
+	
+	if (squareSize < squareSizeThreshold.get() && zeroInSquare)
+	{
+		dvec2 centerPoint = bottomLeft;
+		bottomLeft.x += offsetX;
+		bottomLeft.y += offsetY;
+
+		critPoints.push_back(centerPoint);
+		return;
+	}
+	else if(zeroInSquare)
+	{
+		dvec2 midPointLeft = bottomLeft;
+		midPointLeft.y += offsetY;
+		dvec2 midPointRight = bottomRight;
+		midPointRight.y += offsetY;
+		dvec2 midPointBottom = bottomLeft;
+		midPointBottom.x += offsetX;
+		dvec2 midPointTop = topLeft;
+		midPointTop.x += offsetX;
+		dvec2 centerPoint = bottomLeft;
+		centerPoint.x += offsetX;
+		centerPoint.y += offsetY;
+
+		zeroPossible(bottomLeft, midPointBottom, midPointLeft, centerPoint, vol, critPoints);
+		zeroPossible(midPointBottom, bottomRight, centerPoint, midPointRight, vol, critPoints);
+		zeroPossible(midPointLeft, centerPoint, topLeft, midPointTop, vol, critPoints);
+		zeroPossible(centerPoint, midPointRight, midPointTop, topRight, vol, critPoints);
+	}
 }
 
 }// namespace

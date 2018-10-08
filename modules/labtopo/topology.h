@@ -69,6 +69,7 @@ public:
     virtual void process() override;
 
     //TODO: You may want to declare additional functions here, e.g., extractCriticalPoints.
+	void zeroPossible(dvec2 bottomLeft, dvec2 bottomRight, dvec2 topLeft, dvec2 topRight, const Volume * vol, std::vector<vec2> & critPoints);
 
     // Ports
   public:
@@ -77,6 +78,10 @@ public:
 
     // Output mesh
     MeshOutport outMesh;
+
+	//Properties
+  public:
+	  FloatProperty squareSizeThreshold;
 };
 
 }// namespace inviwo
