@@ -69,7 +69,9 @@ public:
     virtual void process() override;
 
     //TODO: You may want to declare additional functions here, e.g., extractCriticalPoints.
-	void zeroPossible(dvec2 bottomLeft, dvec2 bottomRight, dvec2 topLeft, dvec2 topRight, const Volume * vol, std::vector<vec2> & critPoints);
+	bool approxEq(float a, float b);
+	vec4 getCritPointColor(vec2 point, const Volume * vol);
+	void findCriticalPoints(vec2 bottomLeft, vec2 bottomRight, vec2 topLeft, vec2 topRight, const Volume * vol, std::vector<vec2> & critPoints);
 
     // Ports
   public:
@@ -82,6 +84,7 @@ public:
 	//Properties
   public:
 	  FloatProperty squareSizeThreshold;
+	  FloatProperty zeroTolerance;
 };
 
 }// namespace inviwo

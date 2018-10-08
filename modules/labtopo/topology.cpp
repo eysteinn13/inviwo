@@ -13,6 +13,7 @@
 #include <labtopo/topology.h>
 #include <labtopo/utils/gradients.h>
 #include <math.h>
+#include <utility>
 
 namespace inviwo
 {
@@ -44,6 +45,7 @@ const ProcessorInfo Topology::getProcessorInfo() const
 Topology::Topology()
     : Processor(), outMesh("meshOut"), inData("inData")
 	, squareSizeThreshold("squareSizeThreshold", "Square Size Threshold", 0.3, 0.0001, 1, 0.0001)
+	, zeroTolerance("zeroTolerance", "Zero Tolerance", 1e-4, 1e-7, 1e-1, 1e-1)
 // TODO: Initialize additional properties
 // propertyName("propertyIdentifier", "Display Name of the Propery",
 // default value (optional), minimum value (optional), maximum value (optional), increment (optional));
@@ -56,6 +58,7 @@ Topology::Topology()
     // TODO: Register additional properties
     // addProperty(propertyName);
 	addProperty(squareSizeThreshold);
+	addProperty(zeroTolerance);
 }
 
 void Topology::process()
@@ -92,7 +95,7 @@ void Topology::process()
 			vec2 bottomRight(x + 1, y);
 			vec2 topLeft(x, y + 1);
 			vec2 topRight(x + 1, y + 1);			
-			zeroPossible(bottomLeft, bottomRight, topLeft, topRight, vol.get(), criticalPoints);
+			findCriticalPoints(bottomLeft, bottomRight, topLeft, topRight, vol.get(), criticalPoints);
 		}
 	}
 
@@ -100,15 +103,62 @@ void Topology::process()
 	
 	for (auto point : criticalPoints)
 	{
-		indexBufferPoints->add(static_cast<std::uint32_t>(vertices.size()));
-		vertices.push_back({ vec3(point.x / (dims[0] - 1), point.y / (dims[1] - 1), 0), vec3(0), vec3(0), vec4(1, 0, 0, 1) });   
+		indexBufferPoints->add(static_cast<std::uint32_t>(vertices.size()));		
+		vertices.push_back({	vec3(point.x / (dims[0] - 1), point.y / (dims[1] - 1), 0), 
+								vec3(0), vec3(0), getCritPointColor(point, vol.get()) });
 	}
 
     mesh->addVertices(vertices);
     outMesh.setData(mesh);
 }
 
-void Topology::zeroPossible(dvec2 bottomLeft, dvec2 bottomRight, dvec2 topLeft, dvec2 topRight, const Volume * vol, std::vector<vec2> & critPoints)
+
+vec4 Topology::getCritPointColor(vec2 point, const Volume * vol)
+{
+	mat2 jacobian = Interpolator::sampleJacobian(vol, point);
+	auto eigenRes = util::eigenAnalysis(jacobian);
+	vec2 imaginaries = eigenRes.eigenvaluesIm;
+	vec2 reals = eigenRes.eigenvaluesRe;
+
+	if (approxEq(imaginaries[0], 0) && approxEq(imaginaries[1], 0))
+	{
+		if (reals[0] < 0 && reals[1] > 0 || reals[1] < 0 && reals[0] > 0)
+		{
+			return ColorsCP[0];
+		}
+		if (reals[0] < 0 && reals[1] < 0)
+		{
+			return ColorsCP[1];
+		}
+		if (reals[0] > 0 && reals[1] > 0)
+		{
+			return ColorsCP[2];
+		}
+	}
+	else if (approxEq(imaginaries[0], -1 * imaginaries[1]) && !approxEq(imaginaries[0], 0))
+	{
+		if (approxEq(reals[0], reals[1]) && reals[0] < 0)
+		{
+			return ColorsCP[3];
+		}
+		if (reals[0] > 0 && reals[1] > 0)
+		{
+			return ColorsCP[4];
+		}
+		if (approxEq(reals[0], 0) && approxEq(reals[1], 0))
+		{
+			return ColorsCP[5];
+		}
+	}	
+	return vec4(0, 0, 0, 1);
+}
+
+bool Topology::approxEq(float a, float b)
+{
+	return a > b - zeroTolerance.get() && a < b + zeroTolerance.get();
+}
+
+void Topology::findCriticalPoints(vec2 bottomLeft, vec2 bottomRight, vec2 topLeft, vec2 topRight, const Volume * vol, std::vector<vec2> & critPoints)
 {
 	float diffX = topRight.x - topLeft.x;
 	float diffY = topRight.y - bottomRight.y;
@@ -159,22 +209,22 @@ void Topology::zeroPossible(dvec2 bottomLeft, dvec2 bottomRight, dvec2 topLeft, 
 	}
 	else if(zeroInSquare)
 	{
-		dvec2 midPointLeft = bottomLeft;
+		vec2 midPointLeft = bottomLeft;
 		midPointLeft.y += offsetY;
-		dvec2 midPointRight = bottomRight;
+		vec2 midPointRight = bottomRight;
 		midPointRight.y += offsetY;
-		dvec2 midPointBottom = bottomLeft;
+		vec2 midPointBottom = bottomLeft;
 		midPointBottom.x += offsetX;
-		dvec2 midPointTop = topLeft;
+		vec2 midPointTop = topLeft;
 		midPointTop.x += offsetX;
-		dvec2 centerPoint = bottomLeft;
+		vec2 centerPoint = bottomLeft;
 		centerPoint.x += offsetX;
 		centerPoint.y += offsetY;
 
-		zeroPossible(bottomLeft, midPointBottom, midPointLeft, centerPoint, vol, critPoints);
-		zeroPossible(midPointBottom, bottomRight, centerPoint, midPointRight, vol, critPoints);
-		zeroPossible(midPointLeft, centerPoint, topLeft, midPointTop, vol, critPoints);
-		zeroPossible(centerPoint, midPointRight, midPointTop, topRight, vol, critPoints);
+		findCriticalPoints(bottomLeft, midPointBottom, midPointLeft, centerPoint, vol, critPoints);
+		findCriticalPoints(midPointBottom, bottomRight, centerPoint, midPointRight, vol, critPoints);
+		findCriticalPoints(midPointLeft, centerPoint, topLeft, midPointTop, vol, critPoints);
+		findCriticalPoints(centerPoint, midPointRight, midPointTop, topRight, vol, critPoints);
 	}
 }
 
