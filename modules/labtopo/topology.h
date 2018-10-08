@@ -15,7 +15,6 @@
 #include <inviwo/core/properties/eventproperty.h>
 #include <inviwo/core/properties/ordinalproperty.h>
 #include <labtopo/labtopomoduledefine.h>
-#include <labstreamlines/streamlineintegrator.h>
 
 namespace inviwo
 {
@@ -71,10 +70,17 @@ public:
 
     //TODO: You may want to declare additional functions here, e.g., extractCriticalPoints.
 	void findCriticalPoints(vec2 bottomLeft, vec2 bottomRight, vec2 topLeft, vec2 topRight,
-		const Volume * vol, std::vector<vec2> & critPoints);	
-	vec4 getCritPointColor(	vec2 point, const Volume * vol, const VolumeRAM * vr,
-							IndexBufferRAM* indexBufferRK, IndexBufferRAM* indexBufferPoints,
-							std::vector<BasicMesh::Vertex>& vertices);
+							const Volume * vol, std::vector<vec2> & critPoints);	
+
+	vec4 getCritPointColor(vec2 point, const Volume * vol, IndexBufferRAM* indexBufferRK,
+		std::vector<BasicMesh::Vertex>& vertices);
+
+	void createStreamLine(const vec2 & startPoint, const Volume * vol, int direction,
+		IndexBufferRAM* indexBufferRK, std::vector<BasicMesh::Vertex>& vertices);
+
+	void drawLineSegment(const vec2& v1, const vec2& v2, const vec4& color,
+		IndexBufferRAM* indexBuffer, std::vector<BasicMesh::Vertex>& vertices);
+
 	bool approxEq(float a, float b);
 
     // Ports
@@ -89,9 +95,9 @@ public:
   public:
 	  FloatProperty squareSizeThreshold;
 	  FloatProperty zeroTolerance;
-
-  private:
-	  //StreamlineIntegrator integrator;
+	  FloatProperty stepSize;
+	  FloatProperty threshold;
+	  IntProperty numSteps;
 };
 
 }// namespace inviwo

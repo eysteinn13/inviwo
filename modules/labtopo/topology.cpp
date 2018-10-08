@@ -12,7 +12,6 @@
 #include <labtopo/interpolator.h>
 #include <labtopo/topology.h>
 #include <labtopo/utils/gradients.h>
-#include <labstreamlines/streamlineintegrator.h>
 #include <math.h>
 #include <utility>
 
@@ -45,8 +44,11 @@ const ProcessorInfo Topology::getProcessorInfo() const
 
 Topology::Topology()
     : Processor(), outMesh("meshOut"), inData("inData")
-	, squareSizeThreshold("squareSizeThreshold", "Square Size Threshold", 0.3, 0.0001, 1, 0.0001)
+	, squareSizeThreshold("squareSizeThreshold", "Square Size Threshold", 0.3, 0.00000001, 1, 0.00000001)
 	, zeroTolerance("zeroTolerance", "Zero Tolerance", 1e-4, 1e-7, 1e-1, 1e-1)
+	, stepSize("stepSize", "Step Size", 1, 0.00001, 5, 0.00001)
+	, threshold("threshold", "Threshold", 1, 0.00001, 5, 0.00001)
+	, numSteps("numSteps", "Number of Steps", 100, 1, 500, 1)
 // TODO: Initialize additional properties
 // propertyName("propertyIdentifier", "Display Name of the Propery",
 // default value (optional), minimum value (optional), maximum value (optional), increment (optional));
@@ -60,6 +62,9 @@ Topology::Topology()
     // addProperty(propertyName);
 	addProperty(squareSizeThreshold);
 	addProperty(zeroTolerance);
+	addProperty(stepSize);
+	addProperty(threshold);
+	addProperty(numSteps);
 }
 
 void Topology::process()
@@ -102,10 +107,10 @@ void Topology::process()
 	LogProcessorInfo("Number of critical points: " << criticalPoints.size());
 	
 	for (auto point : criticalPoints) {
-		vec4 color = getCritPointColor(point, vol.get(), vr, indexBufferSeparatrices, indexBufferPoints, vertices);
+		vec4 color = getCritPointColor(point, vol.get(), indexBufferSeparatrices, vertices);
 		indexBufferPoints->add(static_cast<std::uint32_t>(vertices.size()));		
 		vertices.push_back({	vec3(point.x / (dims[0] - 1), point.y / (dims[1] - 1), 0), 
-								vec3(0), vec3(0),  });
+								vec3(0), vec3(0),  color});
 	}
 
     mesh->addVertices(vertices);
@@ -113,11 +118,10 @@ void Topology::process()
 }
 
 
-vec4 Topology::getCritPointColor(	vec2 point, const Volume * vol, const VolumeRAM * vr, 
-									IndexBufferRAM* indexBufferRK, IndexBufferRAM* indexBufferPoints, 
-									std::vector<BasicMesh::Vertex>& vertices)
+vec4 Topology::getCritPointColor(vec2 point, const Volume * vol, IndexBufferRAM* indexBufferRK, 
+								std::vector<BasicMesh::Vertex>& vertices)
 {
-	StreamlineIntegrator integrator;
+	//StreamlineIntegrator * integrator = new StreamlineIntegrator();
 	mat2 jacobian = Interpolator::sampleJacobian(vol, point);
 	auto eigenRes = util::eigenAnalysis(jacobian);
 	vec2 imaginaries = eigenRes.eigenvaluesIm;
@@ -126,7 +130,19 @@ vec4 Topology::getCritPointColor(	vec2 point, const Volume * vol, const VolumeRA
 	if (approxEq(imaginaries[0], 0) && approxEq(imaginaries[1], 0)) {
 		if ((reals[0] < 0 && reals[1] > 0) || (reals[1] < 0 && reals[0] > 0))
 		{ 			
-			integrator.createStreamLine(point, vr, indexBufferRK, indexBufferPoints, vertices);
+			vec2 startPoint1 = point + 1e-2f * eigenRes.eigenvectors[0];
+			vec2 startPoint2 = point - 1e-2f  * eigenRes.eigenvectors[0];
+			vec2 startPoint3 = point + 1e-2f  * eigenRes.eigenvectors[1];
+			vec2 startPoint4 = point - 1e-2f * eigenRes.eigenvectors[1];
+
+			int orientation1 = eigenRes.eigenvaluesRe[0] / abs(eigenRes.eigenvaluesRe[0]);
+			int orientation2 = eigenRes.eigenvaluesRe[1] / abs(eigenRes.eigenvaluesRe[1]);
+
+			createStreamLine(startPoint1, vol, orientation1, indexBufferRK, vertices);			
+			createStreamLine(startPoint3, vol, orientation1, indexBufferRK, vertices);
+
+			createStreamLine(startPoint2, vol, orientation2, indexBufferRK, vertices);
+			createStreamLine(startPoint4, vol, orientation2, indexBufferRK, vertices);
 			return ColorsCP[0];
 		}
 		if (reals[0] < 0 && reals[1] < 0)
@@ -142,6 +158,42 @@ vec4 Topology::getCritPointColor(	vec2 point, const Volume * vol, const VolumeRA
 		if (reals[0] > 0 && reals[1] > 0)
 			return ColorsCP[4];	}
 	return vec4(0, 0, 0, 1);
+}
+
+
+void Topology::createStreamLine(const vec2 & startPoint, const Volume * vol, int direction,
+								IndexBufferRAM* indexBufferRK, std::vector<BasicMesh::Vertex>& vertices)
+{
+	bool reachedThreshold = false;
+	auto dims = vol->getDimensions();
+	
+	vec2 prev_point = startPoint;
+	for (int i = 0; i < numSteps.get(); i++)
+	{
+		vec2 next_point = Integrator::RK4(vol, prev_point, stepSize.get(), direction, reachedThreshold, threshold.get());
+
+		bool out_of_bounds = (next_point[0] < 0 || next_point[0] > dims[0] - 1 || next_point[1] < 0 || next_point[1] > dims[1] - 1);
+		if (out_of_bounds || reachedThreshold)
+			break;
+
+		drawLineSegment(vec2(prev_point.x / (dims.x - 1), prev_point.y / (dims.y - 1)),
+						vec2(next_point.x / (dims.x - 1), next_point.y / (dims.y - 1)),
+						vec4(1, 0, 0, 1), indexBufferRK, vertices);
+		prev_point = next_point;
+	}
+}
+
+
+void Topology::drawLineSegment(const vec2& v1, const vec2& v2, const vec4& color,
+	IndexBufferRAM* indexBuffer, std::vector<BasicMesh::Vertex>& vertices) {
+	// Add first vertex
+	indexBuffer->add(static_cast<std::uint32_t>(vertices.size()));
+	// A vertex has a position, a normal, a texture coordinate and a color
+	// we do not use normal or texture coordinate, but still have to specify them
+	vertices.push_back({ vec3(v1[0], v1[1], 0), vec3(0, 0, 1), vec3(v1[0], v1[1], 0), color });
+	// Add second vertex
+	indexBuffer->add(static_cast<std::uint32_t>(vertices.size()));
+	vertices.push_back({ vec3(v2[0], v2[1], 0), vec3(0, 0, 1), vec3(v2[0], v2[1], 0), color });
 }
 
 bool Topology::approxEq(float a, float b)

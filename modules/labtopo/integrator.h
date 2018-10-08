@@ -29,6 +29,9 @@ public:
 // Methods
 public:
 
+	static vec2 Integrator::RK4(const Volume * vol, 
+		const vec2& position, float step_size, int direction,
+		bool&threshold, const float& threshold_value);
     // TODO: Build on the last assignment by either copying the integrator code
     // here and in the respective .cpp or include the header from that
     // assignment with #include <lablic/integrator.h> in the files
