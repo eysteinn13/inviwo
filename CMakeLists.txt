@@ -170,6 +170,7 @@ set(ivw_default_modules
     "LabLIC"
     "LabMarchingSquares"
     "LabStreamlines"
+    "LabTopo"
     "DD2257Setup"
     CACHE INTERNAL "Default Inviwo Modules"
 )

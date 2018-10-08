@@ -67,7 +67,7 @@ void NoiseTextureGenerator::process() {
     // color layer is relevant for us
     auto outLayer = outImage->getColorLayer();
 
-    outLayer->setDimensions(size2_t(texSize_.get().x, texSize_.get().y));
+    outImage->setDimensions(size2_t(texSize_.get().x, texSize_.get().y));
     // With the data format DataVec4UInt8 values for RGB-alpha range between 0 and 255
     outLayer->setDataFormat(DataVec4UInt8::get());
 
