@@ -73,6 +73,9 @@ public:
 	void findCriticalPoints(vec2 bottomLeft, vec2 bottomRight, vec2 topLeft, vec2 topRight,
 							const Volume * vol, std::vector<vec2> & critPoints);	
 
+	void findBoudnarySwitchPoints(vec2 point1, vec2 point2, const Volume * vol, size3_t dims,
+		IndexBufferRAM* indexBufferPoints, IndexBufferRAM* indexBufferLine, std::vector<BasicMesh::Vertex>& vertices, int axis);
+
 	vec4 getCritPointColor(vec2 point, const Volume * vol, IndexBufferRAM* indexBufferRK,
 		std::vector<BasicMesh::Vertex>& vertices);
 
@@ -98,6 +101,7 @@ public:
 	  FloatProperty zeroTolerance;
 	  FloatProperty stepSize;
 	  FloatProperty threshold;
+	  FloatProperty boundarySwitchStep;
 	  IntProperty numSteps;
 };
 

@@ -49,6 +49,7 @@ Topology::Topology()
 	, stepSize("stepSize", "Step Size", 1, 0.00001, 5, 0.00001)
 	, threshold("threshold", "Threshold", 1, 0.00001, 5, 0.00001)
 	, numSteps("numSteps", "Number of Steps", 100, 1, 500, 1)
+	, boundarySwitchStep("boundarySwitchStep", "Boundary Check Step", 1e-4, 1e-7, 1, 1e-1)
 // TODO: Initialize additional properties
 // propertyName("propertyIdentifier", "Display Name of the Propery",
 // default value (optional), minimum value (optional), maximum value (optional), increment (optional));
@@ -65,6 +66,7 @@ Topology::Topology()
 	addProperty(stepSize);
 	addProperty(threshold);
 	addProperty(numSteps);
+	addProperty(boundarySwitchStep);
 }
 
 void Topology::process()
@@ -104,6 +106,31 @@ void Topology::process()
 		}
 	}
 
+	for (float x = 0; x < dims[0] - 1 - boundarySwitchStep; x += boundarySwitchStep)
+	{
+		vec2 point1(x, 0);
+		vec2 point2(x + boundarySwitchStep.get(), 0);
+		findBoudnarySwitchPoints(point1, point2, vol.get(), dims, indexBufferPoints, indexBufferSeparatrices, vertices, 1);
+	}
+	for (float x = 0; x < dims[0] - 1 - boundarySwitchStep; x += boundarySwitchStep)
+	{
+		vec2 point1(x, dims[1] - 1);
+		vec2 point2(x + boundarySwitchStep.get(), dims[1] - 1);
+		findBoudnarySwitchPoints(point1, point2, vol.get(), dims, indexBufferPoints, indexBufferSeparatrices, vertices, 1);
+	}
+	for (float y = boundarySwitchStep; y < dims[1] - 1 - boundarySwitchStep; y += boundarySwitchStep)
+	{
+		vec2 point1(0, y);
+		vec2 point2(0, y + boundarySwitchStep.get());
+		findBoudnarySwitchPoints(point1, point2, vol.get(), dims, indexBufferPoints, indexBufferSeparatrices, vertices, 2);
+	}
+	for (float y = boundarySwitchStep; y < dims[1] - 1 - boundarySwitchStep; y += boundarySwitchStep)
+	{
+		vec2 point1(dims[0] - 1, y);
+		vec2 point2(dims[0] - 1, y + boundarySwitchStep.get());
+		findBoudnarySwitchPoints(point1, point2, vol.get(), dims, indexBufferPoints, indexBufferSeparatrices, vertices, 2);
+	}
+
 	LogProcessorInfo("Number of critical points: " << criticalPoints.size());
 	
 	for (auto point : criticalPoints) {
@@ -117,6 +144,45 @@ void Topology::process()
     outMesh.setData(mesh);
 }
 
+void Topology::findBoudnarySwitchPoints(vec2 point1, vec2 point2, const Volume * vol, size3_t dims,
+				IndexBufferRAM* indexBufferPoints, IndexBufferRAM* indexBufferLine, std::vector<BasicMesh::Vertex>& vertices, int axis)
+{
+	vec2 value1 = Interpolator::sampleFromField(vol, point1);
+	vec2 value2 = Interpolator::sampleFromField(vol, point2);
+
+	if (axis == 1)
+	{
+		int sign1 = value1.y / abs(value1.y);
+		int sign2 = value2.y / abs(value2.y);
+		if (sign1 != sign2)
+		{
+			vec2 point((point2.x - point1.x) / 2 + point1.x, point1.y);
+			indexBufferPoints->add(static_cast<std::uint32_t>(vertices.size()));
+			vertices.push_back({ vec3(point.x / (dims[0] - 1), point.y / (dims[1] - 1), 0),
+				vec3(0), vec3(0),  vec4(255, 255, 255, 255) });
+			createStreamLine(point1, vol, sign2, indexBufferLine, vertices);
+			createStreamLine(point2, vol, sign1, indexBufferLine, vertices);
+			createStreamLine(point1, vol, sign1, indexBufferLine, vertices);
+			createStreamLine(point2, vol, sign2, indexBufferLine, vertices);
+		}
+	}
+	else
+	{
+		int sign1 = value1.x / abs(value1.x);
+		int sign2 = value2.x / abs(value2.x);
+		if (sign1 != sign2)
+		{
+			vec2 point(point1.x, (point2.y - point1.y) / 2 + point1.y);
+			indexBufferPoints->add(static_cast<std::uint32_t>(vertices.size()));
+			vertices.push_back({ vec3(point.x / (dims[0] - 1), point.y / (dims[1] - 1), 0),
+				vec3(0), vec3(0),  vec4(255, 255, 255, 255) });
+			createStreamLine(point1, vol, sign2, indexBufferLine, vertices);
+			createStreamLine(point2, vol, sign1, indexBufferLine, vertices);
+			createStreamLine(point1, vol, sign1, indexBufferLine, vertices);
+			createStreamLine(point2, vol, sign2, indexBufferLine, vertices);
+		}
+	}
+}
 
 vec4 Topology::getCritPointColor(vec2 point, const Volume * vol, IndexBufferRAM* indexBufferRK, 
 								std::vector<BasicMesh::Vertex>& vertices)
